@@ -1,0 +1,144 @@
+<?php
+
+include_once('includes/tvdb_api.class.inc');
+
+/**
+ * Implements hook_menu
+ */
+function whichep_v2_menu() {
+  $items['episode-results'] = array(
+    'title' => t('Episode results'),
+    'page callback' => 'whichep_v2_search_result',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_block_info()
+ */
+function whichep_v2_block_info() {
+  $blocks = array();
+  $blocks['which_ep_v2'] = array(
+    'info' => t('Which Episode?'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+function whichep_v2_block_view($delta = 'which_ep_v2') {
+  $block['subject'] = NULL;
+  $block['content'] = drupal_get_form('whichep_v2_search_form');
+  return $block;
+}
+
+function whichep_v2_search_form($form_state) {
+  $form = array();
+  $form['whichep_v2_search'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Enter a TV series to pick an episode from'),
+    '#collapsed' => FALSE,
+    '#collapsible' => FALSE,
+  );
+
+  $form['whichep_v2_search']['tvseries'] =  array(
+    '#type' => 'textfield',
+    '#title' => t('TV series'),
+    '#description' => t(''),
+    '#maxlength' => 80,
+    '#required' => TRUE,
+    '#size' => 60,
+    '#default_value' => '',
+  );
+
+  $form['whichep_v2_search']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Get me an ep!',
+  );
+
+  return $form;
+}
+
+/**
+ * Validate function TODO
+ *
+function whichep_search_form_validate($form, $form_state) {
+  $tv_series = $form_state['values']['tvseries'];
+  if (check_plain($tv_series))) {
+    drupal_set_message(t("Please use alphanumeric characters only"), 'warning');
+  }
+
+}*/
+
+
+/**
+ * Submit function, where the magic happens
+ */
+function whichep_v2_search_form_submit($form, $form_state) {
+  if (check_plain($form_state['values']['tvseries']) != '') {
+    //whichep_v2_search_result(check_plain($form_state['values']['tvseries']));
+    $form_state['redirect'] = 'episode-results/' . check_plain($form_state['values']['tvseries']);
+    drupal_redirect_form($form_state);
+  }
+  else {
+    drupal_set_message(t("We can't find an episode for your series :( Try search again?"), 'warning');
+    drupal_goto('');
+  }
+}
+
+function whichep_v2_theme() {
+  return array(
+    'whichep_v2_theme_results' => array(
+      'render element' => 'element',
+    ),
+  );
+}
+
+/**
+ */
+function whichep_v2_search_result($series = NULL) {
+  if (isset($series)) {
+    $tvdbapi = new tvdbApi('http://www.thetvdb.com', '1225885AFACA6CD9');
+    $query = drupal_encode_path($series);
+    $seriesid = $tvdbapi->getSeriesId($query);
+  }
+  else {
+    drupal_set_message(t("Enter a valid series to search"), 'warning');
+    drupal_goto('');
+  }
+  if (isset($seriesid)) {
+    $episodes = $tvdbapi->getEpList($seriesid);
+  }
+  else {
+    drupal_set_message(t("We can't find an episode for your series :( Try search again?"), 'warning');
+    drupal_goto('');
+  }
+  if (isset($episodes) && is_array($episodes)) {
+    $random_ep = $episodes[mt_rand(0, count($episodes) - 1)];
+    $season = $random_ep->getElementsByTagName('Combined_season')->item(0)->nodeValue;
+    $ep_num = $random_ep->getElementsByTagName('EpisodeNumber')->item(0)->nodeValue;
+    $ep_title = $random_ep->getElementsByTagName('EpisodeName')->item(0)->nodeValue;
+
+
+    $content[] = t("We've found your TV Series!");
+    $content['results'] = t("Why not watch: ") . 'Season ' . $season . ' Episode ' . $ep_num . ' ' . $ep_title;
+    $content['#theme_wrappers'] = array('whichep_v2_theme_results');
+
+    return $content;
+  }
+  else {
+    drupal_set_message(t("We can't find an episode for your series :( Try search again?"), 'warning');
+    drupal_goto('');
+  }
+}
+
+function theme_whichep_v2_theme_results($variables) {
+  $element = $variables['element'];
+  $output = '';
+  foreach (element_children($element) as $count) {
+    $output .= '<p>' . $element[$count] . '</p>';
+  }
+  return $output;
+}
+
