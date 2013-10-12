@@ -13,7 +13,6 @@ How?
 A drupal module and a standalone PHP wrapper around the TVDB.com API (or the parts I need).
 
 TODO:
-- Integrate drupal caching into the API calls to speed things up.
 - Investigate possibility of using AJAX to return results.
 - Add proper exception throwing/handling to API.
-
+- Add multistep form handling for series that have multiple matches on name.
