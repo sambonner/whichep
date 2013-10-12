@@ -99,7 +99,7 @@ function whichep_theme() {
  */
 function whichep_search_result($series = NULL) {
   if (isset($series)) {
-    $tvdbapi = new tvdbApi('http://www.thetvdb.com', '1225885AFACA6CD9');
+    $tvdbapi = new tvdbApi('http://www.thetvdb.com', '');
     $query = drupal_encode_path($series);
     $seriesid = $tvdbapi->getSeriesId($query);
   }
