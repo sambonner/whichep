@@ -1,0 +1,22 @@
+<?php
+/**
+ * @file install file for whichep module.
+ */
+
+/**
+ * Implements hook_schema.
+ * Create seperate cache table for whichep episodes
+ */
+function whichep_schema() {
+  $schema = array();
+  $schema['cache_whichep'] = drupal_get_schema_unprocessed('system', 'cache');
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall.
+ */
+function whichep_uninstall() {
+  drupal_uninstall_schema('whichep');
+}

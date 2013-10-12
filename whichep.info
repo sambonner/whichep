@@ -1,0 +1,3 @@
+name = Which Episode?
+description = Uses TVDB API to retrieve TV show episode list, returns random episode
+core = 7.x
