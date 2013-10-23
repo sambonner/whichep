@@ -61,23 +61,10 @@ function whichep_search_form($form_state) {
 }
 
 /**
- * Validate function TODO
- *
-function whichep_search_form_validate($form, $form_state) {
-  $tv_series = $form_state['values']['tvseries'];
-  if (check_plain($tv_series))) {
-    drupal_set_message(t("Please use alphanumeric characters only"), 'warning');
-  }
-
-}*/
-
-
-/**
  * Submit function, where the magic happens
  */
 function whichep_search_form_submit($form, $form_state) {
   if (check_plain($form_state['values']['tvseries']) != '') {
-    //whichep_search_result(check_plain($form_state['values']['tvseries']));
     $form_state['redirect'] = 'episode-results/' . check_plain($form_state['values']['tvseries']);
     drupal_redirect_form($form_state);
   }
