@@ -106,10 +106,13 @@ function whichep_search_result($series = NULL) {
     $season = $random_ep->getElementsByTagName('Combined_season')->item(0)->nodeValue;
     $ep_num = $random_ep->getElementsByTagName('EpisodeNumber')->item(0)->nodeValue;
     $ep_title = $random_ep->getElementsByTagName('EpisodeName')->item(0)->nodeValue;
-
+    $ep_overview = $random_ep->getElementsByTagName('Overview')->item(0)->nodeValue;
 
     $content[] = t("We've found your TV Series!");
     $content['results'] = t("Why not watch: ") . 'Season ' . $season . ' Episode ' . $ep_num . ' ' . $ep_title;
+    if (!empty($ep_overview)) {
+      $content['overview'] = $ep_overview;
+    }
     $content['#theme_wrappers'] = array('whichep_theme_results');
 
     return $content;
@@ -124,7 +127,12 @@ function theme_whichep_theme_results($variables) {
   $element = $variables['element'];
   $output = '';
   foreach (element_children($element) as $count) {
-    $output .= '<p>' . $element[$count] . '</p>';
+    if ($count === 'overview') {
+      $output .= '<p><em>' . $element[$count] . '</em></p>';
+    }
+    else {
+      $output .= '<p>' . $element[$count] . '</p>';
+    }
   }
   return $output;
 }
