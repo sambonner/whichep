@@ -11,6 +11,31 @@ function whichep_schema() {
   $schema = array();
   $schema['cache_whichep'] = drupal_get_schema_unprocessed('system', 'cache');
 
+  $schema['whichep_search_terms'] = array(
+    'description' => 'Stores successful search terms made to whichep. Used to provide autosuggestor',
+    'fields' => array(
+      'search_term' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => '',
+        'not null' => TRUE,
+      ),
+      'timestamp' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'default' => 0,
+        'not null' => TRUE,
+      ),
+      'count' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'default' => 0,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary keys' => array('search_term'),
+  );
+
   return $schema;
 }
 
@@ -19,4 +44,10 @@ function whichep_schema() {
  */
 function whichep_uninstall() {
   drupal_uninstall_schema('whichep');
+}
+
+function whichep_update_7001() {
+
+  db_create_table('whichep_search_terms', drupal_get_schema_unprocessed('whichep', 'whichep_search_terms'));
+
 }

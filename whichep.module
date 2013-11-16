@@ -12,6 +12,14 @@ function whichep_menu() {
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
+
+  $items['whichep/autocomplete'] = array(
+    'title' => t('Whichep autocomplete'),
+    'page callback' => 'whichep_autocomplete',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -50,11 +58,13 @@ function whichep_search_form($form_state) {
     '#required' => TRUE,
     '#size' => 120,
     '#default_value' => '',
+    '#autocomplete_path' => 'whichep/autocomplete',
+    '#attached' => array('js' => array(drupal_get_path('module', 'whichep') . '/js/autocomplete.js')),
   );
 
   $form['whichep_search']['submit'] = array(
     '#type' => 'submit',
-    '#value' => 'Get an ep',
+    '#value' => t('Get an ep'),
   );
 
   return $form;
@@ -65,6 +75,7 @@ function whichep_search_form($form_state) {
  */
 function whichep_search_form_submit($form, $form_state) {
   if (check_plain($form_state['values']['tvseries']) != '') {
+    //whichep_search_result(check_plain($form_state['values']['tvseries']));
     $form_state['redirect'] = 'episode-results/' . check_plain($form_state['values']['tvseries']);
     drupal_redirect_form($form_state);
   }
@@ -95,6 +106,7 @@ function whichep_search_result($series = NULL) {
     drupal_goto('');
   }
   if (isset($seriesid)) {
+    whichep_log_query($series);
     $episodes = $tvdbapi->getEpList($seriesid);
   }
   else {
@@ -123,6 +135,36 @@ function whichep_search_result($series = NULL) {
   }
 }
 
+/**
+ * Writes or updates a series to the whichep_search_terms table.
+ * @param $series - the cleaned series query.
+ */
+function whichep_log_query($series) {
+  $sql = 'SELECT count FROM {whichep_search_terms} WHERE search_term = :term';
+  $count = db_query($sql, array(':term' => $series))->fetchField();
+  // If the query has already been logged, update the count and time
+  if (!empty($count)) {
+    $count++;
+    db_update('whichep_search_terms')
+      ->fields(array(
+        'count' => $count,
+        'timestamp' => time(),
+      ))
+      ->condition('search_term', $series, '=')
+      ->execute();
+  }
+  // Otherwise, write a new record for the term
+  else {
+    db_insert('whichep_search_terms')
+      ->fields(array(
+        'search_term' => $series,
+        'timestamp' => time(),
+        'count' => 1,
+      ))
+      ->execute();
+  }
+}
+
 function theme_whichep_theme_results($variables) {
   $element = $variables['element'];
   $output = '';
@@ -135,5 +177,31 @@ function theme_whichep_theme_results($variables) {
     }
   }
   return $output;
+}
+
+/**
+ * Menu callback for whichep/autocomplete
+ * @param $query - the partial query for matching
+ * @return A maximum of 10 suggestions
+ */
+function whichep_autocomplete($query) {
+  $matches = array();
+
+  $sql = "SELECT search_term FROM {whichep_search_terms} WHERE LOWER(search_term)
+    LIKE LOWER(:query) ORDER BY count DESC";
+
+  $results = db_query_range($sql, 0, 10, array(':query' => db_like($query) . '%'))->fetchAssoc();
+
+  if ($results) {
+    foreach ($results as $result) {
+      $result = check_plain($result);
+      $matches[$result] = $result;
+    }
+
+    return drupal_json_output($matches);
+  }
+  else {
+    return;
+  }
 }
 
